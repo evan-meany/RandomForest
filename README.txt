@@ -1,0 +1,1 @@
+I had a ChatGPT conversation about good projects to work on related to AI. I wanted to implement an algorithm or method that would be fairly agnostic of data and could be highly flexible. It recomended RandomForest. I will include a sample implementation of a Python RandomForest package to show how I want to be able to use it once I am finished.
