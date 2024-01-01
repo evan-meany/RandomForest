@@ -1,0 +1,7 @@
+The data set contains three different categorical classes such as setosa, versicolor, virginica in addition with numeric entities like sepal length, 
+sepal width, petal length and petal width of 150 iris flowers.
+More details on the dataset available at: "UCI Machine Learning repository"
+
+it can be used for classification and prediction – to see which features of an iris can identify the flower as a certain type of iris.
+ The values for length and width can be used to classify an iris into one of three iris types: Iris setosa, Iris versicolor, or Iris virginica.
+  Visually exploring this data also lets you see the grouping (clustering) of the records into these three different types of irises.

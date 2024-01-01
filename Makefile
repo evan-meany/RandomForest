@@ -5,7 +5,7 @@ SRC_DIR = src
 OBJ_DIR = obj
 BIN_DIR = bin
 DLL_NAME = $(BIN_DIR)/mylibrary.dll
-EXE_NAME = $(BIN_DIR)/testapp
+EXE_NAME = $(BIN_DIR)/testapp.exe
 TEST_DIR = test
 TEST_SRC = $(wildcard $(TEST_DIR)/*.c)
 TEST_OBJ = $(TEST_SRC:$(TEST_DIR)/%.c=$(OBJ_DIR)/%.o)
@@ -43,6 +43,14 @@ $(BIN_DIR):
 # Clean rule
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR)
+
+# Run target
+run: $(EXE_NAME)
+	./$(EXE_NAME)
+
+# Debug target
+debug: $(EXE_NAME)
+	gdb $(EXE_NAME)
 
 # Phony targets
 .PHONY: all clean

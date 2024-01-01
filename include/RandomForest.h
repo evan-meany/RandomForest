@@ -6,7 +6,10 @@ extern "C" {
 
 #include "Core.h"
 
-RF_EXPORT struct 
+DLL_EXPORT struct test
+{
+   int x;
+};
 
 #endif
 #ifdef __cplusplus
