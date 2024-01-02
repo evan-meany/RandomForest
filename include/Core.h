@@ -9,5 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <math.h>
+#include <stdbool.h>
 
 #endif // End CORE_H

@@ -5,36 +5,28 @@ extern "C" {
 #define RANDOM_FOREST_H
 
 #include "Core.h"
+#include "Data.h"
 
 // Categorical and Regression Decision Tree Nodes
-DLL_EXPORT struct CatNode
+DLL_EXPORT struct Node
 {
-   int dimension;
+   bool leaf;
+
+   // For non-leaf nodes
+   size_t feature;
    double threshold; 
-   struct CatNode* left; // left <= threshold
-   struct CatNode* right; // right > threshold
    double informationGain;
+   struct Node* left; // left <= threshold
+   struct Node* right; // right > threshold
 
    // For leaf nodes
-   double* values;
    size_t sizeOfValues;
-   double modeValue;
+   size_t modeClass;
 };
 
-// Regression Node
-DLL_EXPORT struct RegNode
-{
-   int dimension;
-   double threshold; 
-   struct RegNode* left; // left <= threshold
-   struct RegNode* right; // right > threshold
-   double varianceReduction;
+DLL_EXPORT struct Node* BuildTree(struct Dataset* train);
+DLL_EXPORT void PrintTree(struct Node* head, size_t tab);
 
-   // For leaf nodes
-   double* values;
-   size_t sizeOfValues;
-   double averageValue;
-};
 
 #endif
 #ifdef __cplusplus
