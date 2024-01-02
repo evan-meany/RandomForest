@@ -3,10 +3,15 @@
 
 #include "Core.h"
 
+DLL_EXPORT struct Observation
+{
+   double* features;
+   size_t classification;
+};
+
 DLL_EXPORT struct Dataset
 {
-   double** features;
-   size_t* classification;
+   struct Observation* observations;
    size_t numberOfRecords;
    size_t numberOfFeatures;
 };

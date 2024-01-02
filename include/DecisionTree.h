@@ -25,6 +25,10 @@ DLL_EXPORT struct Node
 };
 
 DLL_EXPORT struct Node* BuildTree(struct Dataset* train);
+DLL_EXPORT double Predict(struct Node* head, struct Dataset* test);
+DLL_EXPORT size_t PredictSingleRecursive(struct Node* head,
+                                         const struct Observation* observation);
+DLL_EXPORT void DestroyTree(struct Node* head);
 DLL_EXPORT void PrintTree(struct Node* head, size_t tab);
 
 

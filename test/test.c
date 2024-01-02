@@ -14,7 +14,10 @@ int main()
 
    struct Node* head = BuildTree(&irisTrain);
    PrintTree(head, 0);
+   double percentCorrect = Predict(head, &irisTest);
+   printf("Percent Correct: %f", percentCorrect);
 
+   DestroyTree(head);
    DestroyDataset(&irisDataset);
    DestroyDataset(&irisTrain);
    DestroyDataset(&irisTest);
