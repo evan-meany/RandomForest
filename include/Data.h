@@ -1,3 +1,6 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
 #ifndef DATA_H
 #define DATA_H
 
@@ -9,19 +12,41 @@ DLL_EXPORT struct Observation
    size_t classification;
 };
 
-DLL_EXPORT struct Dataset
+DLL_EXPORT struct ObservationPool
 {
    struct Observation* observations;
-   size_t numberOfRecords;
+   size_t numberOfObservations;
    size_t numberOfFeatures;
 };
 
+DLL_EXPORT struct Dataset
+{
+   const struct Observation** observations;
+   size_t numberOfObservations;
+   size_t numberOfFeatures;
+};
+
+// ObservationPool functions
+DLL_EXPORT void DestroyObservationPool(struct ObservationPool* pool);
+DLL_EXPORT void SplitPool(const struct ObservationPool* pool, 
+                          struct Dataset* train,
+                          struct Dataset* test,
+                          const double fractionTraining);
+DLL_EXPORT void PrintObservationPool(const struct ObservationPool* pool);
+
+// Dataset functions
 DLL_EXPORT void DestroyDataset(struct Dataset* dataset);
-DLL_EXPORT size_t IrisPetalToClassification(const char* petal);
-DLL_EXPORT int ImportIrisDataset(struct Dataset* dataset);
-DLL_EXPORT void SplitDataset(struct Dataset* dataset, 
-                             struct Dataset* train,
-                             struct Dataset* test);
 DLL_EXPORT void PrintDataset(struct Dataset* dataset);
 
+// Import Functions
+DLL_EXPORT size_t IrisPetalToClassification(const char* petal);
+DLL_EXPORT int ImportIrisDataset(struct ObservationPool* pool);
+
+// Misc. functions
+size_t* GetRandomFeatureIndices(const struct Dataset* dataset,
+                                const size_t numberOfFeatures); 
+
 #endif // End DATA_H
+#ifdef __cplusplus
+}
+#endif

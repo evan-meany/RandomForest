@@ -4,31 +4,34 @@ static const size_t MAX_DEPTH = 2;
 static const size_t MIN_SAMPLES = 2;
 #define UNIQUE_CLASSIFICATIONS 3
 
-double InformationGain(struct Dataset* train,
-                       const size_t* indices, 
+// Returns a double representing information gain
+double InformationGain(const struct Dataset* dataset,
+                       const size_t* datasetIndices, 
                        const size_t indicesSize,
                        const double threshold,
                        const size_t featureIndex,
                        const double parentEntropy)
 {
+   // Find the class totals after a potential split at threshold
    size_t leftClasses[UNIQUE_CLASSIFICATIONS] = {0};
    size_t rightClasses[UNIQUE_CLASSIFICATIONS] = {0};
    size_t leftTotal = 0, rightTotal = 0;
    for(size_t i = 0; i < indicesSize; i++)
    {
-      const size_t index = indices[i];
-      if (train->observations[index].features[featureIndex] <= threshold)
+      const size_t index = datasetIndices[i];
+      if (dataset->observations[index]->features[featureIndex] <= threshold)
       {
-         leftClasses[train->observations[index].classification]++;
+         leftClasses[dataset->observations[index]->classification]++;
          leftTotal++;
       }
       else
       {
-         rightClasses[train->observations[index].classification]++;
+         rightClasses[dataset->observations[index]->classification]++;
          rightTotal++;
       }
    }
 
+   // Calcuate entropies and weight based on fraction of observations
    double leftWeight = (double)leftTotal / (double)indicesSize;
    double rightWeight = (double)rightTotal / (double)indicesSize;
    double leftEntropy = 0, rightEntropy = 0;
@@ -43,22 +46,24 @@ double InformationGain(struct Dataset* train,
    return parentEntropy - (leftWeight * leftEntropy) - (rightWeight * rightEntropy);
 }
 
-// returns head of tree
-struct Node* BTRecursive(struct Dataset* train,
-                         const size_t* indices, 
-                         const size_t indicesSize,
+// Returns head of tree
+struct Node* BTRecursive(const struct Dataset* dataset,
+                         const size_t* datasetIndices, 
+                         const size_t datasetIndicesSize,
+                         const size_t* featureIndices,
+                         const size_t featureIndicesSize,
                          const size_t depth)
 {
    // Calculate class totals
    size_t classTotals[UNIQUE_CLASSIFICATIONS] = {0};
-   for(size_t i = 0; i < indicesSize; i++)
+   for(size_t i = 0; i < datasetIndicesSize; i++)
    {
-      const size_t index = indices[i];
-      classTotals[train->observations[index].classification]++;
+      const size_t index = datasetIndices[i];
+      classTotals[dataset->observations[index]->classification]++;
    }
 
    // Check size and depth
-   if (indicesSize < MIN_SAMPLES || depth > MAX_DEPTH)
+   if (datasetIndicesSize < MIN_SAMPLES || depth > MAX_DEPTH)
    {
       // Get mode class
       size_t highestTotal = 0, modeClass = 0;
@@ -71,10 +76,11 @@ struct Node* BTRecursive(struct Dataset* train,
          }
       }
 
+      // Create leaf node and return it
       struct Node* node = malloc(sizeof(struct Node));
       node->leaf = true;
       node->modeClass = modeClass;
-      node->sizeOfValues = indicesSize;
+      node->sizeOfValues = datasetIndicesSize;
       node->left = NULL;
       node->right = NULL;
       return node;
@@ -84,26 +90,27 @@ struct Node* BTRecursive(struct Dataset* train,
    double parentEntropy = 0;
    for (size_t i = 0; i < UNIQUE_CLASSIFICATIONS; i++)
    {
-      double classProb = (double)classTotals[i] / (double)indicesSize;
+      double classProb = (double)classTotals[i] / (double)datasetIndicesSize;
       parentEntropy -= classProb * log2(classProb);
    }
 
    // Find threshold value that maximizes information gain
-   size_t bestFeature = 0;
-   double bestThreshold = train->observations[0].features[bestFeature];
+   size_t bestFeature = featureIndices[0];
+   double bestThreshold = dataset->observations[0]->features[bestFeature];
    double bestInformationGain = 0;
-   for (size_t i = 0; i < indicesSize; i++)
+   for (size_t i = 0; i < datasetIndicesSize; i++)
    {
-      const size_t index = indices[i];
-      for (size_t j = 0; j < train->numberOfFeatures; j++)
+      const size_t datasetIndex = datasetIndices[i];
+      for (size_t j = 0; j < featureIndicesSize; j++)
       {
-         double threshold = train->observations[index].features[j];
-         double informationGain = InformationGain(train, indices, indicesSize,
-                                                  threshold, j, parentEntropy);
+         size_t featureIndex = featureIndices[j];
+         double threshold = dataset->observations[datasetIndex]->features[featureIndex];
+         double informationGain = InformationGain(dataset, datasetIndices, datasetIndicesSize,
+                                                  threshold, featureIndex, parentEntropy);
          if (informationGain > bestInformationGain)
          {
             bestInformationGain = informationGain;
-            bestFeature = j;
+            bestFeature = featureIndex;
             bestThreshold = threshold;
          }
       }
@@ -123,35 +130,40 @@ struct Node* BTRecursive(struct Dataset* train,
          }
       }
 
+      // Create leaf node and return it
       struct Node* node = malloc(sizeof(struct Node));
       node->leaf = true;
       node->modeClass = modeClass;
-      node->sizeOfValues = indicesSize;
+      node->sizeOfValues = datasetIndicesSize;
       node->left = NULL;
       node->right = NULL;
       return node;
    }
 
+   printf("here");
    // Now split data along the best threshold
-   size_t leftSize = 0, rightSize = 0;
-   for (size_t i = 0; i < indicesSize; i++)
+   size_t leftDatasetSize = 0, rightDatasetSize = 0;
+   for (size_t i = 0; i < datasetIndicesSize; i++)
    {
-      const size_t index = indices[i];
-      if (train->observations[index].features[bestFeature] <= bestThreshold) { leftSize++; }
-      else { rightSize++; }
+      const size_t datasetIndex = datasetIndices[i];
+      if (dataset->observations[datasetIndex]->features[bestFeature] <= bestThreshold) 
+      { 
+         leftDatasetSize++;
+      }
+      else { rightDatasetSize++; }
    }
 
-   size_t* leftIndices = malloc(leftSize * sizeof(size_t));
-   size_t* rightIndices = malloc(rightSize * sizeof(size_t));
-   size_t leftIndex = 0, rightIndex = 0;
-   for (size_t i = 0; i < indicesSize; i++)
+   size_t* leftDatasetIndices = malloc(leftDatasetSize * sizeof(size_t));
+   size_t* rightDatasetIndices = malloc(rightDatasetSize * sizeof(size_t));
+   size_t leftDatasetIndex = 0, rightDatasetIndex = 0;
+   for (size_t i = 0; i < datasetIndicesSize; i++)
    {
-      const size_t index = indices[i];
-      if (train->observations[index].features[bestFeature] <= bestThreshold) 
+      const size_t datasetIndex = datasetIndices[i];
+      if (dataset->observations[datasetIndex]->features[bestFeature] <= bestThreshold) 
       { 
-         leftIndices[leftIndex++] = index;
+         leftDatasetIndices[leftDatasetIndex++] = datasetIndex;
       }
-      else { rightIndices[rightIndex++] = index; }
+      else { rightDatasetIndices[rightDatasetIndex++] = datasetIndex; }
    }
 
    // Create new node and connect to parent
@@ -160,32 +172,59 @@ struct Node* BTRecursive(struct Dataset* train,
    node->feature = bestFeature;
    node->threshold = bestThreshold;
    node->informationGain = bestInformationGain;
-   node->left = BTRecursive(train, leftIndices, leftSize, depth + 1);
-   node->right = BTRecursive(train, rightIndices, rightSize, depth + 1);
-   free(leftIndices);
-   free(rightIndices);
+   node->left = BTRecursive(dataset, leftDatasetIndices, leftDatasetSize, 
+                            featureIndices, featureIndicesSize, depth + 1);
+   node->right = BTRecursive(dataset, rightDatasetIndices, rightDatasetSize, 
+                             featureIndices, featureIndicesSize, depth + 1);
+   free(leftDatasetIndices);
+   free(rightDatasetIndices);
    return node;
 }
 
-// returns head of tree
-DLL_EXPORT struct Node* BuildTree(struct Dataset* train)
+// Returns DecisionTree
+DLL_EXPORT struct DecisionTree BuildTree(const struct Dataset* dataset, 
+                                         const size_t numberOfFeatures)
 {
-   size_t* allIndices = malloc(train->numberOfRecords * sizeof(size_t));
-   for (size_t i = 0; i < train->numberOfRecords; i++) { allIndices[i] = i; }
-   struct Node* head  = BTRecursive(train, allIndices, train->numberOfRecords, 0);
+   // Setup indices array
+   size_t* allIndices = malloc(dataset->numberOfFeatures * sizeof(size_t));
+   for (size_t i = 0; i < dataset->numberOfFeatures; i++) { allIndices[i] = i; }
+
+   // Setup featureIndices
+   size_t* featureIndices = GetRandomFeatureIndices(dataset, numberOfFeatures);
+   printf("Feature indices: ");
+   for (size_t i = 0; i < numberOfFeatures; i++)
+   {
+      printf("%d, ", featureIndices[i]);
+   }
+   printf("\n");
+
+   // Recursively create tree
+   struct Node* head  = BTRecursive(dataset, allIndices, dataset->numberOfFeatures, 
+                                    featureIndices, numberOfFeatures, 0);
+
+   // Remove indices array
    free(allIndices);
-   return head;
+
+   // Create and return DecisionTree struct
+   struct DecisionTree tree;
+   tree.head = head;
+   tree.featureIndices = featureIndices;
+   tree.numberOfFeatures = numberOfFeatures;
+   return tree;
 }
 
-// returns the classification prediction of an observation
-DLL_EXPORT size_t PredictSingleRecursive(struct Node* head,
+// Returns the classification prediction of an observation
+DLL_EXPORT size_t PredictSingleRecursive(const struct Node* head,
                                          const struct Observation* observation)
 {
-   if (head->leaf == true || head == NULL)
+   // If at leaf return the leaf's classification
+   if (head == NULL) { return 0; }
+   if (head->leaf == true)
    {
       return head->modeClass;
    }
 
+   // Continue recursing
    if (observation->features[head->feature] <= head->threshold)
    {
       return PredictSingleRecursive(head->left, observation);
@@ -193,20 +232,21 @@ DLL_EXPORT size_t PredictSingleRecursive(struct Node* head,
    else { return PredictSingleRecursive(head->right, observation); }
 }
 
-// returns raw number of correct choices
-size_t PredictRecursive(struct Node* head,
-                        struct Dataset* test, 
+// Returns raw number of correct choices
+size_t PredictRecursive(const struct Node* head,
+                        const struct Dataset* test, 
                         const size_t* indices, 
                         const size_t indicesSize)
 {
    // Return number of correct predictions
-   if (head->leaf == true || head == NULL)
+   if (head == NULL) { return 0; }
+   if (head->leaf == true)
    {  
       size_t totalCorrect = 0;
       for (size_t i = 0; i < indicesSize; i++)
       {
          const size_t index = indices[i];
-         if (test->observations[index].classification == head->modeClass)
+         if (test->observations[index]->classification == head->modeClass)
          {
             totalCorrect++;
          }
@@ -221,7 +261,7 @@ size_t PredictRecursive(struct Node* head,
    {
       const size_t index = indices[i];
       const size_t feature = head->feature;
-      if (test->observations[index].features[feature] <= head->threshold) { leftSize++; }
+      if (test->observations[index]->features[feature] <= head->threshold) { leftSize++; }
       else { rightSize++; }
    }
 
@@ -232,7 +272,7 @@ size_t PredictRecursive(struct Node* head,
    {
       const size_t index = indices[i];
       const size_t feature = head->feature;
-      if (test->observations[index].features[feature] <= head->threshold) 
+      if (test->observations[index]->features[feature] <= head->threshold) 
       { 
          leftIndices[leftIndex++] = index;
       }
@@ -247,32 +287,44 @@ size_t PredictRecursive(struct Node* head,
    return totalCorrect;
 }
 
-// returns the percentage of correct predictions
-DLL_EXPORT double Predict(struct Node* head, 
-                          struct Dataset* test)
+// Returns the percentage of correct predictions
+DLL_EXPORT double Predict(const struct Node* head, 
+                          const struct Dataset* test)
 {
-   size_t* allIndices = malloc(test->numberOfRecords * sizeof(size_t));
-   for (size_t i = 0; i < test->numberOfRecords; i++) { allIndices[i] = i; }
+   size_t* allIndices = malloc(test->numberOfFeatures * sizeof(size_t));
+   for (size_t i = 0; i < test->numberOfFeatures; i++) { allIndices[i] = i; }
    size_t totalCorrect = PredictRecursive(head, test, 
                                           allIndices,
-                                          test->numberOfRecords);
+                                          test->numberOfFeatures);
    free(allIndices);
-   return (double)totalCorrect / (double)test->numberOfRecords;
+   return (double)totalCorrect / (double)test->numberOfObservations;
 }
 
-DLL_EXPORT void DestroyTree(struct Node* head)
+void DestroyTreeRecursive(struct Node* head)
 {
-   if (head->leaf == true || head == NULL)
+   if (head == NULL) { return; }
+   if (head->leaf == true) 
    {
       free(head);
       return;
    }
-   DestroyTree(head->left);
-   DestroyTree(head->right);
+
+   DestroyTreeRecursive(head->left);
+   DestroyTreeRecursive(head->right);
    free(head);
 }
 
-DLL_EXPORT void PrintTree(struct Node* head, size_t tab)
+DLL_EXPORT void DestroyTree(struct DecisionTree* tree)
+{
+   DestroyTreeRecursive(tree->head);
+   tree->head = NULL;
+
+   // Free feature indices
+   free(tree->featureIndices);
+   tree->featureIndices = NULL;
+}
+
+void PrintTreeRecursive(const struct Node* head, const size_t tab)
 {
    for (size_t i = 0; i < tab; i++) { printf(" "); }
    if (head->leaf == true)
@@ -281,10 +333,15 @@ DLL_EXPORT void PrintTree(struct Node* head, size_t tab)
    }
    else
    {
-      PrintTree(head->left, tab + 1);
+      PrintTreeRecursive(head->left, tab + 1);
       printf("feature: %d, threshold: %f, IG: %f\n", head->feature,
                                                      head->threshold,
                                                      head->informationGain);
-      PrintTree(head->right, tab + 1);
+      PrintTreeRecursive(head->right, tab + 1);
    }
+}
+
+DLL_EXPORT void PrintTree(const struct DecisionTree* tree)
+{
+   PrintTreeRecursive(tree->head, 0);
 }

@@ -1,25 +1,30 @@
-#include "Data.h"
-#include "DecisionTree.h"
+#include "RandomForest.h"
 
 int main()
 {
-   struct Dataset irisDataset, irisTrain, irisTest;
-   if (ImportIrisDataset(&irisDataset))
-   {
-      perror("Import error");
-      return 1;
-   }
+   srand(time(NULL));
 
-   SplitDataset(&irisDataset, &irisTrain, &irisTest);
+   // Gather data
+   struct ObservationPool iris;
+   if (ImportIrisDataset(&iris)) { return 1; }
 
-   struct Node* head = BuildTree(&irisTrain);
-   PrintTree(head, 0);
-   double percentCorrect = Predict(head, &irisTest);
-   printf("Percent Correct: %f", percentCorrect);
+   // Split observations into training and test datasets
+   struct Dataset train, test;
+   SplitPool(&iris, &train, &test, 0.95);
 
-   DestroyTree(head);
-   DestroyDataset(&irisDataset);
-   DestroyDataset(&irisTrain);
-   DestroyDataset(&irisTest);
+   // Build forest
+   struct RandomForest randomForest = BuildForest(&train, 4);
+
+   // Test forest
+   // PrintObservationPool(&iris);
+   // PrintDataset(&train);
+   // PrintDataset(&test);
+
+   // Destroy created structures
+   DestroyForest(&randomForest);
+   DestroyObservationPool(&iris);
+   DestroyDataset(&train);
+   DestroyDataset(&test);
+
    return 0;
 }

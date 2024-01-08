@@ -4,12 +4,17 @@ extern "C" {
 #ifndef RANDOM_FOREST_H
 #define RANDOM_FOREST_H
 
-#include "Core.h"
+#include "DecisionTree.h"
 
-DLL_EXPORT struct test
+DLL_EXPORT struct RandomForest
 {
-   int x;
+   struct DecisionTree* trees;
+   size_t numberOfTrees;
 };
+
+DLL_EXPORT struct RandomForest BuildForest(const struct Dataset* train, 
+                                           const size_t numberOfTrees);
+DLL_EXPORT void DestroyForest(struct RandomForest* randomForest);
 
 #endif
 #ifdef __cplusplus

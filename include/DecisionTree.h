@@ -1,10 +1,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#ifndef RANDOM_FOREST_H
-#define RANDOM_FOREST_H
 
-#include "Core.h"
+#ifndef DECISION_TREE_H
+#define DECISION_TREE_H
+
 #include "Data.h"
 
 // Categorical and Regression Decision Tree Nodes
@@ -24,15 +24,23 @@ DLL_EXPORT struct Node
    size_t modeClass;
 };
 
-DLL_EXPORT struct Node* BuildTree(struct Dataset* train);
-DLL_EXPORT double Predict(struct Node* head, struct Dataset* test);
-DLL_EXPORT size_t PredictSingleRecursive(struct Node* head,
+DLL_EXPORT struct DecisionTree
+{
+   struct Node* head;
+   size_t* featureIndices;
+   size_t numberOfFeatures;
+};
+
+DLL_EXPORT struct DecisionTree BuildTree(const struct Dataset* train,
+                                         const size_t numberOfFeatures);
+DLL_EXPORT double Predict(const struct Node* head, const struct Dataset* test);
+DLL_EXPORT size_t PredictSingleRecursive(const struct Node* head,
                                          const struct Observation* observation);
-DLL_EXPORT void DestroyTree(struct Node* head);
-DLL_EXPORT void PrintTree(struct Node* head, size_t tab);
+DLL_EXPORT void DestroyTree(struct DecisionTree* tree);
+DLL_EXPORT void PrintTree(const struct DecisionTree* tree);
 
 
-#endif
+#endif // End DECISION_TREE_H
 #ifdef __cplusplus
 }
 #endif
