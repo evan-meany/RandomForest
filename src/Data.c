@@ -18,6 +18,22 @@ DLL_EXPORT void DestroyDataset(struct Dataset* dataset)
    free(dataset->observations);
 }
 
+DLL_EXPORT struct Dataset BuildRandomDataset(struct Dataset* dataset)
+{
+   struct Dataset newDataset;
+   newDataset.numberOfFeatures = dataset->numberOfFeatures;
+   newDataset.numberOfObservations = dataset->numberOfObservations;
+   newDataset.observations = malloc(dataset->numberOfObservations * sizeof(struct Observation*));
+
+   for (size_t i = 0; i < dataset->numberOfObservations; i++)
+   {
+      size_t randomIndex = rand() % (dataset->numberOfObservations);
+      newDataset.observations[i] = dataset->observations[randomIndex];
+   }
+
+   return newDataset;
+}
+
 DLL_EXPORT size_t IrisPetalToClassification(const char* petal)
 {
    if (strcmp(petal, "Iris-setosa\n") == 0) { return 0; }

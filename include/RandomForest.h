@@ -14,6 +14,8 @@ DLL_EXPORT struct RandomForest
 
 DLL_EXPORT struct RandomForest BuildForest(const struct Dataset* train, 
                                            const size_t numberOfTrees);
+DLL_EXPORT size_t Predict(const struct RandomForest* forest,
+                          const struct Dataset* test);
 DLL_EXPORT void DestroyForest(struct RandomForest* randomForest);
 
 #endif

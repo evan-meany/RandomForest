@@ -37,6 +37,7 @@ DLL_EXPORT void PrintObservationPool(const struct ObservationPool* pool);
 // Dataset functions
 DLL_EXPORT void DestroyDataset(struct Dataset* dataset);
 DLL_EXPORT void PrintDataset(struct Dataset* dataset);
+DLL_EXPORT struct Dataset BuildRandomDataset(struct Dataset* dataset);
 
 // Import Functions
 DLL_EXPORT size_t IrisPetalToClassification(const char* petal);

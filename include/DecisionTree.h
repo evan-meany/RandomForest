@@ -33,7 +33,7 @@ DLL_EXPORT struct DecisionTree
 
 DLL_EXPORT struct DecisionTree BuildTree(const struct Dataset* train,
                                          const size_t numberOfFeatures);
-DLL_EXPORT double Predict(const struct Node* head, const struct Dataset* test);
+// DLL_EXPORT double Predict(const struct Node* head, const struct Dataset* test);
 DLL_EXPORT size_t PredictSingleRecursive(const struct Node* head,
                                          const struct Observation* observation);
 DLL_EXPORT void DestroyTree(struct DecisionTree* tree);

@@ -10,15 +10,14 @@ int main()
 
    // Split observations into training and test datasets
    struct Dataset train, test;
-   SplitPool(&iris, &train, &test, 0.95);
+   SplitPool(&iris, &train, &test, 0.90);
 
    // Build forest
-   struct RandomForest randomForest = BuildForest(&train, 4);
+   struct RandomForest randomForest = BuildForest(&train, 100);
 
    // Test forest
-   // PrintObservationPool(&iris);
-   // PrintDataset(&train);
-   // PrintDataset(&test);
+   size_t totalCorrect = Predict(&randomForest, &test);
+   printf("total correct: %zu / %zu", totalCorrect, test.numberOfObservations);
 
    // Destroy created structures
    DestroyForest(&randomForest);

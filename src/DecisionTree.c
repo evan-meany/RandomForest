@@ -39,8 +39,14 @@ double InformationGain(const struct Dataset* dataset,
    {
       double leftClassProb = (double)leftClasses[i] / (double)indicesSize;
       double rightClassProb = (double)rightClasses[i] / (double)indicesSize;
-      leftEntropy -= leftClassProb * log2(leftClassProb);
-      rightEntropy -= rightClassProb * log2(rightClassProb);
+      if (leftClassProb > 0)
+      {
+         leftEntropy -= leftClassProb * log2(leftClassProb);
+      }
+      if (rightClassProb > 0)
+      {
+         rightEntropy -= rightClassProb * log2(rightClassProb);
+      }
    }
 
    return parentEntropy - (leftWeight * leftEntropy) - (rightWeight * rightEntropy);
@@ -91,7 +97,10 @@ struct Node* BTRecursive(const struct Dataset* dataset,
    for (size_t i = 0; i < UNIQUE_CLASSIFICATIONS; i++)
    {
       double classProb = (double)classTotals[i] / (double)datasetIndicesSize;
-      parentEntropy -= classProb * log2(classProb);
+      if (classProb > 0)
+      {
+         parentEntropy -= classProb * log2(classProb);
+      }
    }
 
    // Find threshold value that maximizes information gain
@@ -140,7 +149,6 @@ struct Node* BTRecursive(const struct Dataset* dataset,
       return node;
    }
 
-   printf("here");
    // Now split data along the best threshold
    size_t leftDatasetSize = 0, rightDatasetSize = 0;
    for (size_t i = 0; i < datasetIndicesSize; i++)
@@ -186,20 +194,20 @@ DLL_EXPORT struct DecisionTree BuildTree(const struct Dataset* dataset,
                                          const size_t numberOfFeatures)
 {
    // Setup indices array
-   size_t* allIndices = malloc(dataset->numberOfFeatures * sizeof(size_t));
-   for (size_t i = 0; i < dataset->numberOfFeatures; i++) { allIndices[i] = i; }
+   size_t* allIndices = malloc(dataset->numberOfObservations * sizeof(size_t));
+   for (size_t i = 0; i < dataset->numberOfObservations; i++) { allIndices[i] = i; }
 
    // Setup featureIndices
    size_t* featureIndices = GetRandomFeatureIndices(dataset, numberOfFeatures);
-   printf("Feature indices: ");
-   for (size_t i = 0; i < numberOfFeatures; i++)
-   {
-      printf("%d, ", featureIndices[i]);
-   }
-   printf("\n");
+   // printf("Feature indices: ");
+   // for (size_t i = 0; i < numberOfFeatures; i++)
+   // {
+   //    printf("%d, ", featureIndices[i]);
+   // }
+   // printf("\n");
 
    // Recursively create tree
-   struct Node* head  = BTRecursive(dataset, allIndices, dataset->numberOfFeatures, 
+   struct Node* head  = BTRecursive(dataset, allIndices, dataset->numberOfObservations, 
                                     featureIndices, numberOfFeatures, 0);
 
    // Remove indices array
@@ -288,17 +296,17 @@ size_t PredictRecursive(const struct Node* head,
 }
 
 // Returns the percentage of correct predictions
-DLL_EXPORT double Predict(const struct Node* head, 
-                          const struct Dataset* test)
-{
-   size_t* allIndices = malloc(test->numberOfFeatures * sizeof(size_t));
-   for (size_t i = 0; i < test->numberOfFeatures; i++) { allIndices[i] = i; }
-   size_t totalCorrect = PredictRecursive(head, test, 
-                                          allIndices,
-                                          test->numberOfFeatures);
-   free(allIndices);
-   return (double)totalCorrect / (double)test->numberOfObservations;
-}
+// DLL_EXPORT double Predict(const struct Node* head, 
+//                           const struct Dataset* test)
+// {
+//    size_t* allIndices = malloc(test->numberOfFeatures * sizeof(size_t));
+//    for (size_t i = 0; i < test->numberOfFeatures; i++) { allIndices[i] = i; }
+//    size_t totalCorrect = PredictRecursive(head, test, 
+//                                           allIndices,
+//                                           test->numberOfFeatures);
+//    free(allIndices);
+//    return (double)totalCorrect / (double)test->numberOfObservations;
+// }
 
 void DestroyTreeRecursive(struct Node* head)
 {
@@ -326,7 +334,7 @@ DLL_EXPORT void DestroyTree(struct DecisionTree* tree)
 
 void PrintTreeRecursive(const struct Node* head, const size_t tab)
 {
-   for (size_t i = 0; i < tab; i++) { printf(" "); }
+   for (size_t i = 0; i < tab; i++) { printf("   "); }
    if (head->leaf == true)
    {
       printf("size: %d, mode: %d\n", head->sizeOfValues, head->modeClass);
@@ -343,5 +351,7 @@ void PrintTreeRecursive(const struct Node* head, const size_t tab)
 
 DLL_EXPORT void PrintTree(const struct DecisionTree* tree)
 {
+   printf("\n===========\n");
    PrintTreeRecursive(tree->head, 0);
+   printf("===========\n");
 }
